@@ -1,4 +1,5 @@
-
+# dispatch.py
+# The dispactcher function takes two arguments: filename and file_path.
 from services._csv_reader import csv_reader
 from services._json_reader import json_file_reader
 from services._text_reader import text_reader

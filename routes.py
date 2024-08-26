@@ -1,7 +1,10 @@
+# routes.py
 from flask import jsonify, request, url_for, Blueprint
 from services.secure_filename import get_secure_filename
 from tasks import ocr_document, test_task_sleep
 import os
+
+TEMP_PATH = 'C:\\dev\\py\\pdfToText\\tmp'
 
 # Créer un blueprint pour les routes principales
 main = Blueprint('main', __name__)
@@ -36,7 +39,7 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     filename = get_secure_filename(file.filename)
-    file_path = os.path.join('C:\\', 'dev', 'py', 'pdfToText', 'tmp', filename)
+    file_path = os.path.join(TEMP_PATH, filename)
     file.save(file_path)
     task = ocr_document.delay(filename, file_path)
 
