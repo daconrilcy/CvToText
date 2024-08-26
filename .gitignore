@@ -1,2 +1,2 @@
-tests
-.venv
+/.venv/
+/tests/
