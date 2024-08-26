@@ -1,7 +1,5 @@
 # tasks.py
 from time import sleep
-
-from tesserocr import PyTessBaseAPI
 import os
 
 from celery_app import celery  # Importer l'instance de Celery depuis app.py

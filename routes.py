@@ -1,10 +1,10 @@
 # routes.py
 from flask import jsonify, request, url_for, Blueprint
+from config import TEMP_PATH
 from services.secure_filename import get_secure_filename
 from tasks import ocr_document, test_task_sleep
 import os
 
-TEMP_PATH = 'C:\\dev\\py\\pdfToText\\tmp'
 
 # Créer un blueprint pour les routes principales
 main = Blueprint('main', __name__)

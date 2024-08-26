@@ -1,6 +1,5 @@
 from tesserocr import PyTessBaseAPI
 
-
 def image_to_text(file_path):
     try:
         with PyTessBaseAPI() as api:

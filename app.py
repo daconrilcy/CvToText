@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, url_for, jsonify, request
+from flask import Flask
 # Importer et enregistrer les blueprints
 from routes import main as main_blueprint
 
