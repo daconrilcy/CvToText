@@ -1,77 +1,56 @@
-# routes.py
-from flask import jsonify, request, url_for, Blueprint
-from config import TEMP_PATH
-from services.secure_filename import get_secure_filename
+from flask import jsonify, request, Blueprint
+from services.route_answer import StartAnswer, StatusAnswer, ResultAnswer, ErrorAnswer
+from services.secure import is_client_allowed
+from services.secure_loader import secure_file_loader
 from tasks import ocr_document, test_task_sleep
-import os
 
-
-# Créer un blueprint pour les routes principales
 main = Blueprint('main', __name__)
+maincoreurl = '/api'
 
+@main.before_request
+def before_request():
+    if not is_client_allowed(request):
+        return ErrorAnswer('Not allowed').get_answer()
 
-@main.route('/api/test', methods=['GET'])
+def create_task_route(task_func, base_name):
+    task = task_func.delay()
+    return StartAnswer(task.id, base_name).get_answer()
+
+def create_status_route(task_id, task_func, base_name):
+    return StatusAnswer(task_id=task_id, task_function=task_func, base_name=base_name).get_answer()
+
+def create_result_route(task_id, task_func, base_name):
+    return ResultAnswer(task_id=task_id, task_function=task_func, base_name=base_name).get_answer()
+
+@main.route(f'{maincoreurl}/test/connexion', methods=['GET'])
 def test():
     return jsonify({'message': 'Hello World'}), 200
 
-@main.route('/api/test_task', methods=['GET'])
+@main.route(f'{maincoreurl}/test/task', methods=['GET'])
 def test_task():
-    task = test_task_sleep.delay()
-    return jsonify({'task_id': task.id}), 200
+    return create_task_route(test_task_sleep, 'test')
 
+@main.route(f'{maincoreurl}/test/task/status/<task_id>', methods=['GET'])
+def test_task_status(task_id):
+    return create_status_route(task_id, test_task_sleep, 'test')
 
-@main.route('/api/get_text/<task_id>', methods=['GET'])
-def get_text(task_id):
-    result_text = ocr_document.AsyncResult(task_id)
-    if result_text.ready():
-        return jsonify({'result_text': result_text.get()}), 200
-    else:
-        return jsonify({'error': 'Task not ready'}), 202
+@main.route(f'{maincoreurl}/test/task/result/<task_id>', methods=['GET'])
+def test_task_result(task_id):
+    return create_result_route(task_id, test_task_sleep, 'test')
 
-
-@main.route('/api/upload', methods=['POST'])
+@main.route(f'{maincoreurl}/ocr/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
+    file_loader = secure_file_loader(request)
+    if not file_loader.status:
+        return file_loader.get_answer()
 
-    file = request.files['file']
+    task = ocr_document.delay(file_loader.filename, file_loader.file_path)
+    return StartAnswer(task.id, 'ocr').get_answer()
 
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    filename = get_secure_filename(file.filename)
-    file_path = os.path.join(TEMP_PATH, filename)
-    file.save(file_path)
-    task = ocr_document.delay(filename, file_path)
+@main.route(f'{maincoreurl}/ocr/status/<task_id>')
+def ocr_task_status(task_id):
+    return create_status_route(task_id, ocr_document, 'ocr')
 
-    return jsonify({'task_id': task.id,
-                    'status_url': url_for('main.task_status', task_id=task.id, _external=True),
-                    'result_url': url_for('main.task_status', task_id=task.id, _external=True)
-                    })
-
-
-@main.route('/api/status/<task_id>')
-def task_status(task_id):
-    task = ocr_document.AsyncResult(task_id)
-
-    if task.state == 'PENDING':
-        response = {
-            'state': task.state,
-            'current': 0,
-            'total': 1,
-            'status': 'Pending...'
-        }
-    elif task.state != 'FAILURE':
-        response = {
-            'state': task.state,
-            'current': 1,
-            'total': 1,
-            'status': task.info,  # Le texte OCRisé une fois prêt
-        }
-    else:
-        response = {
-            'state': task.state,
-            'current': 1,
-            'total': 1,
-            'status': str(task.info),  # Exception raised
-        }
-    return jsonify(response)
+@main.route(f'{maincoreurl}/ocr/result/<task_id>')
+def ocr_task_result(task_id):
+    return create_result_route(task_id, ocr_document, 'ocr')

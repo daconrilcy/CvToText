@@ -7,7 +7,7 @@ from services._pdf_convert import pdf_to_text
 from services._image_convert import image_to_text
 
 
-def dispactcher(filename, file_path):
+def dispatcher(filename, file_path):
     if filename.endswith('.txt'):
         return text_reader(file_path)
     elif filename.endswith('.csv'):
