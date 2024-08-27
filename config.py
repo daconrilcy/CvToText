@@ -13,6 +13,7 @@ TEMP_PATH = os.getenv('TMP_PATH')
 ALLOWED_EXTENSIONS = os.getenv('ALLOWED_EXTENSIONS')
 ALLOWED_IPS = os.getenv('ALLOWED_IPS').split(',')
 IP_RESTRICTION = os.getenv('IP_RESTRICTION').lower()
+JWT_SECRET = os.getenv('JWT_SECRET')
 
 if TEMP_PATH is None:
     raise ValueError("La variable d'environnement 'TMP_PATH' n'est pas définie")
